@@ -7,6 +7,8 @@ import type {
   EvaluationStarted,
 } from './types'
 
+// NEXT_PUBLIC_API_URL must be set to an https:// URL in production.
+// The http://localhost:8000 fallback is for local development only.
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 function authHeaders(): Record<string, string> {

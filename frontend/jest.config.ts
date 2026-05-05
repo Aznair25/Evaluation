@@ -10,6 +10,11 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.test.json',
+    },
+  },
   testMatch: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',
