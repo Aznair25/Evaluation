@@ -309,7 +309,7 @@ Respond ONLY in valid JSON:
         )
         return json.loads(response.choices[0].message.content)
     except Exception as exc:
-        logger.error(f"Global comment generation failed: {exc}")
+        logger.error(f"Global comment generation failed ({type(exc).__name__}): {exc}", exc_info=True)
         return {
             "fr": f"L'étudiant a atteint le niveau {cefr_level}.",
             "en": f"The student has reached level {cefr_level}.",
