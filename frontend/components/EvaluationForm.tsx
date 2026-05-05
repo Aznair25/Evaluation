@@ -28,7 +28,8 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
       setFile(null)
       return
     }
-    const ext = '.' + (selected.name.split('.').pop()?.toLowerCase() ?? '')
+    const lastDot = selected.name.lastIndexOf('.')
+    const ext = lastDot >= 0 ? '.' + selected.name.slice(lastDot + 1).toLowerCase() : ''
     if (!ALLOWED_TYPES.includes(ext)) {
       setFileError(`Unsupported file type. Allowed: ${ALLOWED_TYPES.join(', ')}`)
       setFile(null)
