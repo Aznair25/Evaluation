@@ -11,6 +11,14 @@ import type {
 // The http://localhost:8000 fallback is for local development only.
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
+if (
+  typeof window !== 'undefined' &&
+  process.env.NODE_ENV === 'production' &&
+  !BASE_URL.startsWith('https://')
+) {
+  throw new Error('NEXT_PUBLIC_API_URL must use https:// in production')
+}
+
 function authHeaders(): Record<string, string> {
   const token = getToken()
   if (!token) return {}

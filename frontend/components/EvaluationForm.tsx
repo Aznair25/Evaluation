@@ -29,7 +29,8 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
       return
     }
     const lastDot = selected.name.lastIndexOf('.')
-    const ext = lastDot >= 0 ? '.' + selected.name.slice(lastDot + 1).toLowerCase() : ''
+    // Handle edge case: file named '.mp3' (hidden file with no real extension)
+    const ext = lastDot > 0 ? selected.name.slice(lastDot).toLowerCase() : ''
     if (!ALLOWED_TYPES.includes(ext)) {
       setFileError(`Unsupported file type. Allowed: ${ALLOWED_TYPES.join(', ')}`)
       setFile(null)

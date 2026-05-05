@@ -9,6 +9,11 @@ interface ResultCardProps {
   result: EvaluationResult
 }
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)}s`
+  return `${Math.round(seconds / 60)} min`
+}
+
 export function ResultCard({ result }: ResultCardProps) {
   const [lang, setLang] = useState<'fr' | 'en'>('fr')
 
@@ -65,12 +70,12 @@ export function ResultCard({ result }: ResultCardProps) {
           {result.audio_duration_seconds && (
             <p className="text-xs text-gray-400 mt-1">
               {isFr ? 'Durée audio' : 'Audio duration'}:{' '}
-              {Math.round(result.audio_duration_seconds / 60)} min
+              {formatDuration(result.audio_duration_seconds)}
               {result.student_speaking_duration_seconds != null && (
                 <>
                   {' '}·{' '}
                   {isFr ? 'Prise de parole' : 'Student speech'}:{' '}
-                  {Math.round(result.student_speaking_duration_seconds / 60)} min
+                  {formatDuration(result.student_speaking_duration_seconds)}
                 </>
               )}
             </p>

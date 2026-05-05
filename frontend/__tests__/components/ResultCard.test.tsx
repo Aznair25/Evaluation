@@ -79,8 +79,14 @@ describe('ResultCard', () => {
     expect(screen.getByText('Processing error occurred.')).toBeInTheDocument()
   })
 
-  it('shows audio duration', () => {
+  it('shows audio duration in minutes for long recordings', () => {
     render(<ResultCard result={completedResult} />)
     expect(screen.getByText(/20 min/)).toBeInTheDocument()
+  })
+
+  it('shows audio duration in seconds for short recordings', () => {
+    const shortResult = { ...completedResult, audio_duration_seconds: 45, student_speaking_duration_seconds: null }
+    render(<ResultCard result={shortResult} />)
+    expect(screen.getByText(/45s/)).toBeInTheDocument()
   })
 })

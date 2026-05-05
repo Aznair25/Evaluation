@@ -24,7 +24,10 @@ export function useEvaluationSSE(evaluationId: string | null): SSEState {
   useEffect(() => {
     if (!evaluationId) return
 
-    // SSE with auth: include token as query param (EventSource doesn't support headers)
+    // SSE with auth: EventSource does not support custom headers, so the token is passed
+    // as a query parameter. In production, ensure the connection uses HTTPS and the
+    // backend strips the token from logs. A short-lived SSE-specific token would be
+    // more secure but is deferred as a future improvement.
     const token = getToken()
     const url = `${apiClient.getEventsUrl(evaluationId)}${token ? `?token=${encodeURIComponent(token)}` : ''}`
     const es = new EventSource(url)

@@ -1,8 +1,23 @@
 import Link from 'next/link'
 
-export default function HomePage() {
+interface HomePageProps {
+  searchParams: { error?: string }
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  auth_failed: 'Sign-in failed. Please try again.',
+}
+
+export default function HomePage({ searchParams }: HomePageProps) {
+  const errorMsg = searchParams.error ? (ERROR_MESSAGES[searchParams.error] ?? 'An error occurred.') : null
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center gap-8">
+      {errorMsg && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-sm text-red-700">
+          {errorMsg}
+        </div>
+      )}
       <div>
         <h1 className="text-4xl font-extrabold text-brand-700 mb-3">
           CEFR Oral Expression Evaluator

@@ -23,7 +23,10 @@ export function isAuthenticated(): boolean {
     if (parts.length !== 3) return false
     const payload = JSON.parse(atob(parts[1]))
     return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now()
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('JWT parse error:', e)
+    }
     return false
   }
 }
