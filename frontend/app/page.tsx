@@ -1,15 +1,16 @@
 import Link from 'next/link'
 
 interface HomePageProps {
-  searchParams: { error?: string }
+  searchParams: Promise<{ error?: string }>
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: 'Sign-in failed. Please try again.',
 }
 
-export default function HomePage({ searchParams }: HomePageProps) {
-  const errorMsg = searchParams.error ? (ERROR_MESSAGES[searchParams.error] ?? 'An error occurred.') : null
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const { error } = await searchParams
+  const errorMsg = error ? (ERROR_MESSAGES[error] ?? 'An error occurred.') : null
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center gap-8">
