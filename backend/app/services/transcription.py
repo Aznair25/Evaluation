@@ -1,13 +1,15 @@
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 from deepgram import DeepgramClient, PrerecordedOptions
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 
 from app.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -40,8 +42,13 @@ def _identify_student_speaker(utterances: list[Utterance]) -> int:
     return max(speaker_durations, key=lambda s: speaker_durations[s])
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
 async def transcribe_audio(audio_bytes: bytes, language: str = "fr") -> TranscriptResult:
+    logger.info(f"Deepgram transcription: audio_size={len(audio_bytes)} bytes | language={language} | model=nova-3")
     client = DeepgramClient(settings.deepgram_api_key)
 
     options = PrerecordedOptions(
@@ -57,6 +64,7 @@ async def transcribe_audio(audio_bytes: bytes, language: str = "fr") -> Transcri
         {"buffer": audio_bytes, "mimetype": "audio/wav"},
         options,
     )
+    logger.info("Deepgram response received")
 
     result_dict: dict[str, Any] = response.to_dict()
     channels = result_dict.get("results", {}).get("channels", [])
@@ -64,6 +72,7 @@ async def transcribe_audio(audio_bytes: bytes, language: str = "fr") -> Transcri
     metadata = result_dict.get("metadata", {})
 
     audio_duration = metadata.get("duration", 0.0)
+    logger.info(f"Deepgram metadata: duration={audio_duration:.2f}s | raw_utterances={len(utterances_raw)}")
 
     utterances: list[Utterance] = []
     for u in utterances_raw:
@@ -79,6 +88,7 @@ async def transcribe_audio(audio_bytes: bytes, language: str = "fr") -> Transcri
 
     # Fallback: reconstruct from channel alternatives if no utterances
     if not utterances and channels:
+        logger.warning("No utterances returned by Deepgram; falling back to word-level channel reconstruction")
         words = channels[0].get("alternatives", [{}])[0].get("words", [])
         current_speaker = None
         current_start = 0.0
@@ -119,6 +129,14 @@ async def transcribe_audio(audio_bytes: bytes, language: str = "fr") -> Transcri
     student_speaker = _identify_student_speaker(utterances)
     student_turns = [u for u in utterances if u.speaker == student_speaker]
     full_text = " ".join(u.text for u in student_turns)
+
+    logger.info(
+        f"Transcription parsed: total_utterances={len(utterances)} | student_speaker={student_speaker} | "
+        f"student_turns={len(student_turns)} | full_text_chars={len(full_text)}"
+    )
+    # Log unique speakers found
+    speakers = sorted({u.speaker for u in utterances})
+    logger.debug(f"Speakers detected: {speakers}")
 
     return TranscriptResult(
         utterances=utterances,

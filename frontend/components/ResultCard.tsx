@@ -116,6 +116,7 @@ export function ResultCard({ result }: ResultCardProps) {
           📄 {isFr ? 'Télécharger le rapport PDF' : 'Download PDF Report'}
         </a>
       )}
+
     </div>
   )
 }

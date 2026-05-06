@@ -1,12 +1,14 @@
 import json
+import logging
 from dataclasses import dataclass
 
 from openai import AsyncOpenAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 
 from app.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 CEFR_LEVEL_DESCRIPTORS = {
     "A1": "Can respond to very simple questions with one-word answers or rehearsed phrases. Conveys very basic personal information. Relies on repetition. Isolated words, minimal phrases, very basic structures.",
@@ -102,12 +104,17 @@ Respond ONLY with valid JSON:
 }}"""
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
 async def evaluate_criterion(
     criterion_key: str,
     student_transcript: str,
     target_level: str,
 ) -> dict:
+    logger.info(f"evaluate_criterion: key={criterion_key} | target_level={target_level} | transcript_chars={len(student_transcript)}")
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     prompt = _build_prompt(criterion_key, student_transcript, target_level)
 
@@ -119,12 +126,19 @@ async def evaluate_criterion(
     )
 
     content = response.choices[0].message.content
-    return json.loads(content)
+    result = json.loads(content)
+    logger.info(f"evaluate_criterion '{criterion_key}': achieved={result.get('achieved')} | highest_level={result.get('highest_level_demonstrated', 'N/A')}")
+    return result
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
 async def detect_cefr_band(student_transcript: str) -> str:
     """Detect the highest CEFR band from transcript using GPT-4o."""
+    logger.info(f"detect_cefr_band: transcript_chars={len(student_transcript)}")
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     prompt = _build_level_detection_prompt(student_transcript)
 
@@ -137,4 +151,6 @@ async def detect_cefr_band(student_transcript: str) -> str:
 
     content = response.choices[0].message.content
     result = json.loads(content)
-    return result.get("cefr_band", "B1")
+    band = result.get("cefr_band", "B1")
+    logger.info(f"detect_cefr_band result: band={band} | reasoning={result.get('reasoning', '')[:120]!r}")
+    return band

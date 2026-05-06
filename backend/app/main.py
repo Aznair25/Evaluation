@@ -1,3 +1,5 @@
+import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +13,50 @@ from app.api.evaluations import router as evaluations_router
 from app.config import get_settings
 
 settings = get_settings()
+
+
+def _configure_app_logging() -> None:
+    """
+    Ensure every logger under ``app.*`` and ``eval.*`` writes to stdout.
+
+    Uvicorn adds handlers only to its own ``uvicorn.*`` loggers; app-level
+    loggers would otherwise be silently discarded unless the root logger has
+    a handler.  We add one here (idempotently) and pin the app namespaces to
+    DEBUG so service-level logs are fully visible in the container terminal.
+    """
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(fmt)
+
+    root = logging.getLogger()
+    # Only add if there is no stdout StreamHandler already
+    has_stdout = any(
+        isinstance(h, logging.StreamHandler)
+        and getattr(h, "stream", None) is sys.stdout
+        for h in root.handlers
+    )
+    if not has_stdout:
+        root.addHandler(handler)
+    root.setLevel(logging.DEBUG)
+
+    # Pin app namespaces to DEBUG
+    logging.getLogger("app").setLevel(logging.DEBUG)
+    logging.getLogger("eval").setLevel(logging.DEBUG)
+
+    # Quieten noisy third-party libraries
+    for lib in (
+        "azure", "urllib3", "httpx", "httpcore",
+        "boto3", "botocore", "s3transfer",
+        "openai", "deepgram", "asyncio", "multipart",
+    ):
+        logging.getLogger(lib).setLevel(logging.WARNING)
+
+
+_configure_app_logging()
 
 
 @asynccontextmanager
