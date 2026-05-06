@@ -28,7 +28,8 @@ class Evaluation(Base):
 
     # Status tracking
     status: Mapped[EvaluationStatus] = mapped_column(
-        Enum(EvaluationStatus), default=EvaluationStatus.PENDING, nullable=False
+        Enum(EvaluationStatus, values_callable=lambda x: [e.value for e in x]),
+        default=EvaluationStatus.PENDING, nullable=False
     )
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
     current_step: Mapped[str | None] = mapped_column(String(255), nullable=True)

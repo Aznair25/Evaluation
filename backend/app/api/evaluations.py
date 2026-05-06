@@ -2,7 +2,7 @@ import asyncio
 import uuid
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -198,9 +198,21 @@ async def get_evaluation(
 @router.get("/evaluations/{evaluation_id}/events")
 async def evaluation_events(
     evaluation_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    token: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.core.auth import decode_access_token
+    import uuid as _uuid
+    from sqlalchemy import select as _select
+    payload = decode_access_token(token)
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    result = await db.execute(_select(User).where(User.id == _uuid.UUID(user_id_str)))
+    current_user = result.scalar_one_or_none()
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
     await _get_evaluation_or_404(evaluation_id, current_user.id, db)
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -236,9 +248,20 @@ async def evaluation_events(
 @router.get("/evaluations/{evaluation_id}/report")
 async def download_report(
     evaluation_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    token: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.core.auth import decode_access_token
+    import uuid as _uuid
+    from sqlalchemy import select as _select
+    payload = decode_access_token(token)
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    result = await db.execute(_select(User).where(User.id == _uuid.UUID(user_id_str)))
+    current_user = result.scalar_one_or_none()
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     evaluation = await _get_evaluation_or_404(evaluation_id, current_user.id, db)
     if not evaluation.report_s3_key:
         raise HTTPException(status_code=404, detail="Report not yet available")

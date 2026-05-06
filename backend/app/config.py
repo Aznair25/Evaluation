@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_s3_bucket: str = ""
-    aws_s3_region: str = "us-east-1"
+    aws_s3_region: str = ""
 
     # Audio
     audio_retention_days: int = 0

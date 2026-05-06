@@ -96,10 +96,12 @@ export const apiClient = {
   },
 
   getReportUrl(id: string): string {
-    return `${BASE_URL}/api/cefr-evaluator/evaluations/${id}/report`
+    const token = getToken()
+    return `${BASE_URL}/api/cefr-evaluator/evaluations/${id}/report${token ? `?token=${encodeURIComponent(token)}` : ''}`
   },
 
   getEventsUrl(id: string): string {
-    return `${BASE_URL}/api/cefr-evaluator/evaluations/${id}/events`
+    const token = getToken()
+    return `${BASE_URL}/api/cefr-evaluator/evaluations/${id}/events${token ? `?token=${encodeURIComponent(token)}` : ''}`
   },
 }

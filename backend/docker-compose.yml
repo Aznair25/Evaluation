@@ -7,11 +7,15 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cefr:cefr_pass@postgres:5432/cefr_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
       - postgres
       - redis
     volumes:
-      - .:/app
+      - .:/backend/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   postgres:
@@ -28,7 +32,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
 volumes:
   postgres_data:

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -28,13 +28,13 @@ oauth.register(
 
 
 @router.get("/google")
-async def google_login(request):
+async def google_login(request: Request):
     redirect_uri = settings.google_redirect_uri
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/google/callback")
-async def google_callback(request, db: AsyncSession = Depends(get_db)):
+async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     try:
         token = await oauth.google.authorize_access_token(request)
     except Exception as exc:

@@ -1,16 +1,17 @@
 from pydantic import BaseModel
 from datetime import datetime, date
-from typing import Any
+from typing import Any, Optional
 import uuid
 from app.models.evaluation import EvaluationStatus
 
 
 class EvaluateRequest(BaseModel):
-    student_name: str | None = None
-    evaluator_name: str | None = None
-    institution: str | None = None
-    date: date | None = None
+    student_name: Optional[str] = None
+    evaluator_name: Optional[str] = None
+    institution: Optional[str] = None
+    date: Optional[date] = None
     language: str = "fr"
+    
 
 
 class EvaluationStarted(BaseModel):

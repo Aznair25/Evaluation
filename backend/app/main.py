@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.exceptions import validation_exception_handler, generic_exception_handler
 from app.api.auth import router as auth_router
@@ -24,6 +25,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url, "http://localhost:3000"],
